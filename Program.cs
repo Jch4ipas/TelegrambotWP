@@ -91,14 +91,12 @@ class Program
         var chatId = update.Message.Chat.Id;
         Console.WriteLine($"Message reçu de {chatId} : {messageText}");
 
-        if (messageText.Equals("bonjour", StringComparison.OrdinalIgnoreCase))
-        {
-            await botClient.SendTextMessageAsync(
+        await botClient.SendTextMessageAsync(
                 chatId: chatId,
-                text: "au revoir !",
+                text: "Faites /help pour voir les commandes disponible",
                 cancellationToken: cancellationToken
             );
-        }
+
         if (messageText.Equals("/version", StringComparison.OrdinalIgnoreCase))
         {
             await botClient.SendTextMessageAsync(
@@ -119,7 +117,7 @@ class Program
         {
             await botClient.SendTextMessageAsync(
                 chatId: chatId,
-                text: $"Bonjour, voici les différentes commandes de ce bot \n/version : Dit la version actuelle \n/info : Description du bot",
+                text: $"Bonjour, voici les différentes commandes de ce bot \n/version : Vous donne la version actuelle \n/info : Description du bot",
                 cancellationToken: cancellationToken
             );
         }
