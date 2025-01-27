@@ -11,8 +11,10 @@ using Newtonsoft.Json.Linq;
 
 class Program
 {
-    private static readonly string BotToken = "Bot_token";
-    private static readonly long ChatId = put_id_chat;  // L’ID du chat (ou groupe)
+
+    private static readonly string strValue = Environment.GetEnvironmentVariable("envChatId");
+    private static readonly string BotToken = Environment.GetEnvironmentVariable("envBotToken");
+    private static readonly long ChatId = Convert.ToInt64(strValue);
     private static readonly string WordPressApiUrl = "https://api.wordpress.org/core/version-check/1.7/";
     private static string LastVersion = "";
 
