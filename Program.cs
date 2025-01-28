@@ -36,42 +36,44 @@ class Program
             receiverOptions,
             cancellationToken: cts.Token
         );
-
-        Console.WriteLine("Bot démarré. Appuyez sur Entrée pour quitter.");
+        Console.WriteLine(strValue);
+        Console.WriteLine("Bot started. Press Enter to exit.");
         Console.ReadLine();
 
         cts.Cancel();
     }
 
-    // Vérifie toutes les 30 minutes si nouvelle version de wordpress
+    // Check every 30 minutes if a new wordpress version is release.
     private static async Task CheckWordPressUpdates(ITelegramBotClient botClient)
     {
         while (true)
         {
             try
             {
-                var latestVersion = await GetLatestWordPressVersion();
-                if (!string.IsNullOrEmpty(latestVersion) && latestVersion != LastVersion)
+                var latestVersion61 = await GetLatestWordPress61Version();
+
+                if (!string.IsNullOrEmpty(latestVersion61) && latestVersion61 != LastVersion)
                 {
-                    LastVersion = latestVersion;
+                    LastVersion = latestVersion61;
                     await botClient.SendTextMessageAsync(
                         chatId: ChatId,
-                        text: $"Nouvelle version de WordPress disponible : {latestVersion}"
+                        text: $"New WordPress version detected for branch 6.1.x : {latestVersion61}"
                     );
-                    Console.WriteLine($"Nouvelle version détectée : {latestVersion}");
+                    Console.WriteLine($"New version detected : {latestVersion61}");
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Erreur lors de la vérification de WordPress : {ex.Message}");
+                Console.WriteLine($"Error while verifying WordPress : {ex.Message}");
             }
 
-            // Attendre 30 minutes
+            // Wait 30 minute
             await Task.Delay(TimeSpan.FromMinutes(30));
         }
     }
 
-    // Récupère la dernière version stable de WordPress via l’API.
+
+    // Fetch the latest stable version of WordPress via API.
     private static async Task<string> GetLatestWordPressVersion()
     {
         using var httpClient = new HttpClient();
@@ -80,8 +82,27 @@ class Program
 
         return json["offers"]?[0]?["current"]?.ToString() ?? "";
     }
+    private static async Task<string> GetLatestWordPress61Version()
+    {
+        using var httpClient = new HttpClient();
+        var response = await httpClient.GetStringAsync(WordPressApiUrl);
+        var json = JObject.Parse(response);
+        var offers = json["offers"] as JArray;
+        if (offers != null)
+        {
+            foreach (var offer in offers)
+            {
+                var current = offer["current"]?.ToString();
+                if (!string.IsNullOrEmpty(current) && current.StartsWith("6.1."))
+                {
+                    return current;
+                }
+            }
+        }
+        return "";
+    }
 
-    // Gère les messages
+    // Handle message
     private static async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
     {
         var latestVersion = await GetLatestWordPressVersion();
@@ -89,19 +110,13 @@ class Program
             return;
 
         var chatId = update.Message.Chat.Id;
-        Console.WriteLine($"Message reçu de {chatId} : {messageText}");
-
-        await botClient.SendTextMessageAsync(
-                chatId: chatId,
-                text: "Faites /help pour voir les commandes disponible",
-                cancellationToken: cancellationToken
-            );
+        Console.WriteLine($"Message received from {chatId} : {messageText}");
 
         if (messageText.Equals("/version", StringComparison.OrdinalIgnoreCase))
         {
             await botClient.SendTextMessageAsync(
                 chatId: chatId,
-                text: $"Version actuelle de WordPress : {latestVersion}",
+                text: $"The current version of WordPress : {latestVersion}",
                 cancellationToken: cancellationToken
             );
         }
@@ -109,7 +124,7 @@ class Program
         {
             await botClient.SendTextMessageAsync(
                 chatId: chatId,
-                text: $"Ce bot vous envoie un message si il y a une nouvelle version de WordPress qui sort",
+                text: $"This bot will notify you whenever a new version of WordPress is released.",
                 cancellationToken: cancellationToken
             );
         }
@@ -117,13 +132,13 @@ class Program
         {
             await botClient.SendTextMessageAsync(
                 chatId: chatId,
-                text: $"Bonjour, voici les différentes commandes de ce bot \n/version : Vous donne la version actuelle \n/info : Description du bot",
+                text: $"Hello, here are the different commands of this bot \n/version : Gives you the current version \n/info : Bot description",
                 cancellationToken: cancellationToken
             );
         }
     }
 
-    // Gère les erreurs
+    // Handles errors
     private static Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
     {
         string errorMessage = exception switch
