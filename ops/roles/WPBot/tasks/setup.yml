@@ -1,0 +1,35 @@
+- include_vars: vars.yml
+  tags:
+    - alway
+
+- name: Say hello
+  debug:
+    msg: "Hello there I'm working"
+  tags: sayHello
+
+- name: Install Docker
+  apt:
+    name:
+      - docker.io
+    state: present
+
+- name: Start Docker service
+  systemd:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Download the image Docker jchaipas/wordpresstelegrambot
+  community.docker.docker_image:
+    name: jchaipas/wordpresstelegrambot
+    source: pull
+
+- name: Launch the container WordPress Telegram Bot 
+  community.docker.docker_container:
+    name: wordpress_telegram_bot
+    image: jchaipas/wordpresstelegrambot
+    restart_policy: always
+    state: started
+    env:
+      envBotToken: "{{ bot_token }}"
+      envChatId: "{{ chat_id }}"
