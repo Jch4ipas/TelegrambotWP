@@ -1,0 +1,5 @@
+- name: Deploy WPBot on vm apprentis
+  hosts: all
+  gather_facts: no
+  roles:
+    - role: roles/WPBot
