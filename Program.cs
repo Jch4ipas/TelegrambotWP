@@ -39,7 +39,7 @@ class Program
         Console.WriteLine(strValue);
         Console.WriteLine("Bot started. Press Enter to exit.");
         Console.ReadLine();
-
+        await Task.Delay(-1);
         cts.Cancel();
     }
 
