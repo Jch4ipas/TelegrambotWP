@@ -18,6 +18,7 @@ class Program
     private static readonly long ChatId = Convert.ToInt64(strValue);
     private static readonly string WordPressApiUrl = "https://api.wordpress.org/core/version-check/1.7/";
     private static string LastVersion = "";
+    private static readonly HashSet<long> SubscribedUsers = new();
 
     static async Task Main()
     {
@@ -56,10 +57,13 @@ class Program
                 if (!string.IsNullOrEmpty(latestVersion61) && latestVersion61 != LastVersion)
                 {
                     LastVersion = latestVersion61;
-                    await botClient.SendTextMessageAsync(
-                        chatId: ChatId,
+                    foreach (var userId in SubscribedUsers)
+                    {
+                        await botClient.SendMessage(
+                            chatId: userId,
                         text: $"New WordPress version detected for branch 6.1.x : {latestVersion61}"
                     );
+                    }
                     Console.WriteLine($"New version detected : {latestVersion61}");
                 }
             }
@@ -112,6 +116,26 @@ class Program
 
         var chatId = update.Message.Chat.Id;
         Console.WriteLine($"Message received from {chatId} : {messageText}");
+
+        if (messageText.Equals("/Subscribe", StringComparison.OrdinalIgnoreCase))
+            {
+                if (SubscribedUsers.Add(chatId)) // Add the user if not already
+                {
+                    await botClient.SendMessage(
+                        chatId: chatId,
+                        text: "You are now subscribed to WordPress version updates!",
+                        cancellationToken: cancellationToken
+                    );
+                }
+                else
+                {
+                    await botClient.SendMessage(
+                        chatId: chatId,
+                        text: "You are already subscribed.",
+                        cancellationToken: cancellationToken
+                    );
+                }
+            }
 
         if (messageText.Equals("/version", StringComparison.OrdinalIgnoreCase))
         {
