@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Telegram.Bot;
@@ -6,6 +6,7 @@ using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.ReplyMarkups;
 using System.Net.Http;
 using Newtonsoft.Json.Linq;
 
@@ -114,7 +115,7 @@ class Program
 
         if (messageText.Equals("/version", StringComparison.OrdinalIgnoreCase))
         {
-            await botClient.SendTextMessageAsync(
+            await botClient.SendMessage(
                 chatId: chatId,
                 text: $"The current version of WordPress : {latestVersion}",
                 cancellationToken: cancellationToken
@@ -122,7 +123,7 @@ class Program
         }
         if (messageText.Equals("/info", StringComparison.OrdinalIgnoreCase))
         {
-            await botClient.SendTextMessageAsync(
+            await botClient.SendMessage(
                 chatId: chatId,
                 text: $"This bot will notify you whenever a new version of WordPress is released.",
                 cancellationToken: cancellationToken
@@ -130,15 +131,12 @@ class Program
         }
         if (messageText.Equals("/help", StringComparison.OrdinalIgnoreCase))
         {
-            await botClient.SendTextMessageAsync(
+            await botClient.SendMessage(
                 chatId: chatId,
-                text: $"Hello, here are the different commands of this bot \n/version : Gives you the current version \n/info : Bot description",
+                text: $"Hello, here are the different commands of this bot \n/version : Gives you the latest version of WordPress \n/info : Bot description\n/Subscribe : Will notify you whenever a new version of wordpress is out\n/menu : give you a simple menu",
                 cancellationToken: cancellationToken
             );
         }
-    }
-
-    // Handles errors
     private static Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
     {
         string errorMessage = exception switch
