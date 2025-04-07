@@ -1,6 +1,9 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.IO;
+using System.Text.Json;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
@@ -19,7 +22,31 @@ class Program
     private static readonly string WordPressApiUrl = "https://api.wordpress.org/core/version-check/1.7/";
     private static string LastVersion = "";
     private static readonly HashSet<long> SubscribedUsers = new();
+    private static readonly string filePath = "./subscribed_users.json";
 
+
+    static void SaveData()
+    {
+        string json = JsonSerializer.Serialize(SubscribedUsers, new JsonSerializerOptions { WriteIndented = true });
+        File.WriteAllText(filePath, json);
+    }
+
+    static void LoadData()
+    {
+        if (File.Exists(filePath))
+        {
+            string json = File.ReadAllText(filePath);
+            var loadedData = JsonSerializer.Deserialize<HashSet<long>>(json);
+            if (loadedData != null)
+            {
+                SubscribedUsers.Clear();  // Supprime les anciennes valeurs (si besoin)
+                foreach (var user in loadedData)
+                {
+                    SubscribedUsers.Add(user);  // Ajoute les valeurs chargées
+                }
+            }
+        }
+    }
     static async Task Main()
     {
         var botClient = new TelegramBotClient(BotToken);
@@ -38,8 +65,10 @@ class Program
             receiverOptions,
             cancellationToken: cts.Token
         );
+        LoadData();
         Console.WriteLine(strValue);
         Console.WriteLine("Bot started. Press Enter to exit.");
+        Console.WriteLine("Users after: " + string.Join(", ", SubscribedUsers));
         Console.ReadLine();
         await Task.Delay(-1);
         cts.Cancel();
@@ -121,6 +150,7 @@ class Program
             {
                 if (SubscribedUsers.Add(chatId)) // Add the user if not already
                 {
+                    SaveData();
                     await botClient.SendMessage(
                         chatId: chatId,
                         text: "You are now subscribed to WordPress version updates!",
