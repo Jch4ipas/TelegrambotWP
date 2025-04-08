@@ -128,19 +128,27 @@ class Program
         {
             try
             {
-                var latestVersion61 = await GetLatestWordPress61Version();
-
-                if (!string.IsNullOrEmpty(latestVersion61) && latestVersion61 != LastVersion)
+                foreach (var kvp in userVersions)
                 {
-                    LastVersion = latestVersion61;
-                    foreach (var userId in SubscribedUsers)
+                    long userId = kvp.Key;
+                    string selectedVersion = kvp.Value;
+
+                    if (double.TryParse(selectedVersion, out var version))
                     {
+                        var latest = await GetLatestWordPressSelectedVersion(version);
+                        if (!string.IsNullOrEmpty(latest))
+                        {
+                            if (!lastKnownVersions.TryGetValue(selectedVersion, out var lastStored) || lastStored != latest)
+                {
+                                lastKnownVersions[selectedVersion] = latest;
+                                SaveData(filePathlastKnowVersions, lastKnownVersions);
                         await botClient.SendMessage(
                             chatId: userId,
-                        text: $"New WordPress version detected for branch 6.1.x : {latestVersion61}"
+                                    text: $"New WordPress version detected for branch {version} : {latest}"
                     );
+                            }
+                        }
                     }
-                    Console.WriteLine($"New version detected : {latestVersion61}");
                 }
             }
             catch (Exception ex)
@@ -192,6 +200,7 @@ class Program
             return; // Très important : on ne continue pas plus loin
         }
         var latestVersion = await GetLatestWordPressVersion();
+        var latestVersionSelected = await GetLatestWordPressVersion();
         if (update.Message is not { Text: { } messageText })
             return;
 
