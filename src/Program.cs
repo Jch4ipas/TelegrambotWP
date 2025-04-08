@@ -20,7 +20,6 @@ class Program
     private static readonly string BotToken = Environment.GetEnvironmentVariable("envBotToken");
     private static readonly long ChatId = Convert.ToInt64(strValue);
     private static readonly string WordPressApiUrl = "https://api.wordpress.org/core/version-check/1.7/";
-    private static string LastVersion = "";
     private static readonly HashSet<long> SubscribedUsers = new();
     static Dictionary<long, string> userVersions = new Dictionary<long, string>();
     private static Dictionary<string, string> lastKnownVersions = new();
@@ -29,6 +28,7 @@ class Program
     private static readonly string filePathlastKnowVersions = "./lastKnowVersions.json";
 
     private static readonly string filePathVersion = "./version_users.json";
+
 
     static void SaveData<T>(string filePath, T data)
     {
@@ -113,10 +113,9 @@ class Program
             receiverOptions,
             cancellationToken: cts.Token
         );
-        LoadData();
         Console.WriteLine(strValue);
         Console.WriteLine("Bot started. Press Enter to exit.");
-        Console.WriteLine("Users after: " + string.Join(", ", SubscribedUsers));
+        Console.WriteLine("Users subscribed: " + string.Join(", ", SubscribedUsers));
         Console.ReadLine();
         await Task.Delay(-1);
         cts.Cancel();
