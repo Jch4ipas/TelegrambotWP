@@ -270,12 +270,25 @@ class Program
                 );
             }
         }
+        if (messageText.Equals("/myVersion", StringComparison.OrdinalIgnoreCase))
+        {
+            if (userVersions.TryGetValue(chatId, out var selectedVersion))
+            {
+                await botClient.SendMessage(
+                    chatId: chatId,
+                    text: $"Your selected WordPress version: {selectedVersion}",
+                    cancellationToken: cancellationToken
+                );
+            }
+            else
         {
             await botClient.SendMessage(
                 chatId: chatId,
-                text: $"This bot will notify you whenever a new version of WordPress is released.",
+                    text: "You haven't selected a WordPress version yet. Use /SelectVersion to choose one.",
                 cancellationToken: cancellationToken
             );
+            }
+        }
         }
         if (messageText.Equals("/help", StringComparison.OrdinalIgnoreCase))
         {
