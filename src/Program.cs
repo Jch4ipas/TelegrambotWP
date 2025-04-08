@@ -335,6 +335,36 @@ class Program
                 cancellationToken: cancellationToken
             );
         }
+        if (messageText.Equals("/menu", StringComparison.OrdinalIgnoreCase))
+        {
+            await SendReplyKeyboard(botClient, chatId);
+        }
+        else if (update.Type == UpdateType.CallbackQuery && update.CallbackQuery != null)
+        {
+            await HandleCallbackQuery(botClient, update.CallbackQuery);
+        }
+    }
+    private static async Task SendReplyKeyboard(ITelegramBotClient botClient, long chatId)
+    {
+        var replyKeyboard = new ReplyKeyboardMarkup(new[]
+        {
+            new KeyboardButton[] { "/version", "/lastversion"},
+            new KeyboardButton[] { "/info", "/help" },
+            new KeyboardButton[] { "/SelectVersion", "/Subscribe" },
+            new KeyboardButton[] { "/myVersion"}
+        })
+        {
+            ResizeKeyboard = true,
+            OneTimeKeyboard = true
+        };
+
+        await botClient.SendMessage(
+            chatId: chatId,
+            text: "Choose an option:",
+            replyMarkup: replyKeyboard
+        );
+    }
+
     private static async Task Choose_Version(ITelegramBotClient botClient, long chatId)
     {
         var inlineKeyboard = new InlineKeyboardMarkup(new[]
