@@ -202,7 +202,9 @@ class Program
             {
                 if (SubscribedUsers.Add(chatId)) // Add the user if not already
                 {
-                    SaveData();
+                    SaveData(filePathSubscribe, SubscribedUsers);
+                    await Choose_Version(botClient, chatId);
+                    Console.WriteLine("L'utilisateur " + chatId + "a été ajouter au fichier json");
                     await botClient.SendMessage(
                         chatId: chatId,
                         text: "You are now subscribed to WordPress version updates!",
