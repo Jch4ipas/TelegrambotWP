@@ -163,7 +163,7 @@ class Program
 
         return json["offers"]?[0]?["current"]?.ToString() ?? "";
     }
-    private static async Task<string> GetLatestWordPress61Version()
+    private static async Task<string> GetLatestWordPressSelectedVersion(double Selected)
     {
         using var httpClient = new HttpClient();
         var response = await httpClient.GetStringAsync(WordPressApiUrl);
@@ -174,7 +174,7 @@ class Program
             foreach (var offer in offers)
             {
                 var current = offer["current"]?.ToString();
-                if (!string.IsNullOrEmpty(current) && current.StartsWith("6.1."))
+                if (!string.IsNullOrEmpty(current) && current.StartsWith(Selected+"."))
                 {
                     return current;
                 }
