@@ -22,20 +22,26 @@ class Program
     private static readonly string WordPressApiUrl = "https://api.wordpress.org/core/version-check/1.7/";
     private static string LastVersion = "";
     private static readonly HashSet<long> SubscribedUsers = new();
-    private static readonly string filePath = "./subscribed_users.json";
+    static Dictionary<long, string> userVersions = new Dictionary<long, string>();
+    private static Dictionary<string, string> lastKnownVersions = new();
 
+    private static readonly string filePathSubscribe = "./subscribed_users.json";
+    private static readonly string filePathlastKnowVersions = "./lastKnowVersions.json";
 
-    static void SaveData()
+    private static readonly string filePathVersion = "./version_users.json";
+
+    static void SaveData<T>(string filePath, T data)
     {
-        string json = JsonSerializer.Serialize(SubscribedUsers, new JsonSerializerOptions { WriteIndented = true });
+        string json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
         File.WriteAllText(filePath, json);
     }
 
-    static void LoadData()
+    static void LoadDataSubscriber()
     {
-        if (File.Exists(filePath))
+        if (File.Exists(filePathSubscribe))
         {
-            string json = File.ReadAllText(filePath);
+            string json = File.ReadAllText(filePathSubscribe);
+            if (!string.IsNullOrWhiteSpace(json)){
             var loadedData = JsonSerializer.Deserialize<HashSet<long>>(json);
             if (loadedData != null)
             {
@@ -43,12 +49,54 @@ class Program
                 foreach (var user in loadedData)
                 {
                     SubscribedUsers.Add(user);  // Ajoute les valeurs chargées
+                    }
+                }
+            }
+        }
+    }
+    static void LoadDictionaryData(string filePath, ref Dictionary<long, string> data)
+    {
+        if (File.Exists(filePath))
+        {
+            string json = File.ReadAllText(filePath);
+            if (!string.IsNullOrWhiteSpace(json))
+            {
+                var loadedData = JsonSerializer.Deserialize<Dictionary<long, string>>(json);
+                if (loadedData != null)
+                {
+                    data.Clear();
+                    foreach (var kvp in loadedData)
+                    {
+                        data[kvp.Key] = kvp.Value;
+                    }
+                }
+            }
+        }
+    }
+    static void LoadDictionaryDatastring(string filePath, ref Dictionary<string, string> data)
+    {
+        if (File.Exists(filePath))
+        {
+            string json = File.ReadAllText(filePath);
+            if (!string.IsNullOrWhiteSpace(json))
+            {
+                var loadedData = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
+                if (loadedData != null)
+                {
+                    data.Clear();
+                    foreach (var kvp in loadedData)
+                    {
+                        data[kvp.Key] = kvp.Value;
+                    }
                 }
             }
         }
     }
     static async Task Main()
     {
+        LoadDataSubscriber();
+        LoadDictionaryData(filePathVersion, ref userVersions);
+        LoadDictionaryDatastring(filePathlastKnowVersions, ref lastKnownVersions);
         var botClient = new TelegramBotClient(BotToken);
 
         _ = Task.Run(() => CheckWordPressUpdates(botClient));
