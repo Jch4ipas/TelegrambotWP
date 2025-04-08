@@ -230,7 +230,7 @@ class Program
                 }
             }
 
-        if (messageText.Equals("/version", StringComparison.OrdinalIgnoreCase))
+        if (messageText.Equals("/lastversion", StringComparison.OrdinalIgnoreCase))
         {
             await botClient.SendMessage(
                 chatId: chatId,
