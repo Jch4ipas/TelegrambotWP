@@ -314,9 +314,24 @@ class Program
         }
         if (messageText.Equals("/help", StringComparison.OrdinalIgnoreCase))
         {
+            string helpMessage = 
+                "👋 *Welcome to the WordPress Update Bot!*\n\n" +
+                "📌 *What does this bot do?*\n" +
+                "This bot allows you to receive notifications whenever a *new version of WordPress* is released for the branch you choose.\n\n" +
+                "📖 *Available Commands:*\n\n" +
+                "🔹 */lastversion* — Shows the latest stable version of WordPress.\n" +
+                "🔹 */version* — Shows the latest stable version of the branch that u select with */SelectVersion* of WordPress.\n" +
+                "🔹 */SelectVersion* — Allows you to choose a specific WordPress branch (e.g., 6.7, 6.6, etc.).\n" +
+                "🔹 */myVersion* — Shows the version that u select\n" +
+                "🔹 */Subscribe* — Subscribes you to notifications for new WordPress versions.\n" +
+                "🔹 */menu* — Displays a menu with useful buttons.\n" +
+                "🔹 */help* — Displays this list of commands and the bot's functionality.\n\n" +
+                "⚙️ The bot checks every 30 minutes for new versions and sends you a message if there's an update.\n\n" +
+                "🙌 Thank you for using this bot!";
             await botClient.SendMessage(
                 chatId: chatId,
-                text: $"Hello, here are the different commands of this bot \n/version : Gives you the latest version of WordPress \n/info : Bot description\n/Subscribe : Will notify you whenever a new version of wordpress is out\n/menu : give you a simple menu",
+                text: helpMessage,
+                parseMode: ParseMode.Markdown,
                 cancellationToken: cancellationToken
             );
         }
