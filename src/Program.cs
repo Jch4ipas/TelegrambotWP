@@ -289,6 +289,10 @@ class Program
             );
             }
         }
+        if (messageText.Equals("/SelectVersion", StringComparison.OrdinalIgnoreCase))
+        {
+            await Choose_Version(botClient, chatId);
+        }
         }
         if (messageText.Equals("/help", StringComparison.OrdinalIgnoreCase))
         {
