@@ -238,7 +238,29 @@ class Program
                 cancellationToken: cancellationToken
             );
         }
-        if (messageText.Equals("/info", StringComparison.OrdinalIgnoreCase))
+        if (messageText.Equals("/version", StringComparison.OrdinalIgnoreCase))
+        {
+            if (userVersions.TryGetValue(chatId, out var selectedVersionStr) && 
+                double.TryParse(selectedVersionStr, out var selectedVersion))
+            {
+                var latestSelected = await GetLatestWordPressSelectedVersion(selectedVersion);
+                if (!string.IsNullOrEmpty(latestSelected))
+                {
+                    await botClient.SendMessage(
+                        chatId: chatId,
+                        text: $"The latest version for WordPress {selectedVersionStr} is: {latestSelected}",
+                        cancellationToken: cancellationToken
+                    );
+                }
+                else
+                {
+                    await botClient.SendMessage(
+                        chatId: chatId,
+                        text: $"❌ Couldn't find any release for WordPress branch {selectedVersionStr}.",
+                        cancellationToken: cancellationToken
+                    );
+                }
+            }
         {
             await botClient.SendMessage(
                 chatId: chatId,
