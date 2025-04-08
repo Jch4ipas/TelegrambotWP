@@ -238,6 +238,22 @@ class Program
                 cancellationToken: cancellationToken
             );
         }
+    private static async Task Choose_Version(ITelegramBotClient botClient, long chatId)
+    {
+        var inlineKeyboard = new InlineKeyboardMarkup(new[]
+            {
+                new[] { InlineKeyboardButton.WithCallbackData("6.7", "6.7"), InlineKeyboardButton.WithCallbackData("6.6", "6.6") },
+                new[] { InlineKeyboardButton.WithCallbackData("6.5", "6.5"), InlineKeyboardButton.WithCallbackData("6.4", "6.4") },
+                new[] { InlineKeyboardButton.WithCallbackData("6.3", "6.3"), InlineKeyboardButton.WithCallbackData("6.2", "6.2") },
+                new[] { InlineKeyboardButton.WithCallbackData("6.1", "6.1")}
+            });
+
+        await botClient.SendMessage(
+            chatId: chatId,
+            text: "Choose an branch to be notify (You must select a version to receive updates):",
+            replyMarkup: inlineKeyboard
+        );
+    }
     private static Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
     {
         string errorMessage = exception switch
