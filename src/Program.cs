@@ -186,6 +186,11 @@ class Program
     // Handle message
     private static async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
     {
+        if (update.Type == UpdateType.CallbackQuery && update.CallbackQuery != null)
+        {
+            await HandleCallbackQuery(botClient, update.CallbackQuery);
+            return; // Très important : on ne continue pas plus loin
+        }
         var latestVersion = await GetLatestWordPressVersion();
         if (update.Message is not { Text: { } messageText })
             return;
@@ -254,6 +259,38 @@ class Program
             replyMarkup: inlineKeyboard
         );
     }
+
+    private static async Task HandleCallbackQuery(ITelegramBotClient botClient, CallbackQuery callbackQuery)
+    {
+        string selectedVersion = callbackQuery.Data;
+        long userId = callbackQuery.From.Id;
+
+
+        // Convertie en double
+        if (double.TryParse(selectedVersion, out var selected))
+        {
+            Console.WriteLine($"User {userId} select the version {selectedVersion}");
+        }
+
+        userVersions[userId] = selectedVersion;
+        SaveData(filePathVersion, userVersions);
+
+        await botClient.AnswerCallbackQuery(
+            callbackQueryId: callbackQuery.Id,
+            text: $"You select the version {selectedVersion}",
+            showAlert: false
+        );
+
+        await botClient.SendMessage(
+            chatId: callbackQuery.Message.Chat.Id,
+            text: $"Version save : {selectedVersion}"
+        );
+        await botClient.SendMessage(
+            chatId: callbackQuery.Message.Chat.Id,
+            text: $"You are now subscribed to this bot and will be notify when a new version of the branch {selectedVersion} is out."
+        );
+    }
+
     private static Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
     {
         string errorMessage = exception switch
