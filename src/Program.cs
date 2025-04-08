@@ -293,6 +293,24 @@ class Program
         {
             await Choose_Version(botClient, chatId);
         }
+        if (messageText.Equals("/start", StringComparison.OrdinalIgnoreCase))
+        {
+            string startMessage = 
+                "👋 *Welcome to the WordPress Update Bot!*\n\n" +
+                "This bot will notify you whenever a *new version of WordPress* is released for the branch you choose.\n\n" +
+                "📖 *Here’s how to get started:*\n\n" +
+                "1️⃣ *Subscribe* to receive notifications for WordPress updates. Use the command `/Subscribe` to subscribe.\n" +
+                "2️⃣ After subscribing, you'll be prompted to select a *WordPress version* (e.g., 6.7, 6.6, etc.).\n" +
+                "3️⃣ Once you've selected your version, you'll receive notifications whenever there's a new release for your selected branch.\n\n" +
+                "Type */help* to see all the commands.\n\n"+
+                "⚙️ *Notifications:* The bot checks every 30 minutes for new versions and sends you a message if there's an update.\n\n" +
+                "🙌 Thank you for using this bot! Let's keep your WordPress up to date!";
+                await botClient.SendMessage(
+                    chatId: chatId,
+                    text: startMessage,
+                    cancellationToken: cancellationToken,
+                    parseMode: ParseMode.Markdown
+                );
         }
         if (messageText.Equals("/help", StringComparison.OrdinalIgnoreCase))
         {
