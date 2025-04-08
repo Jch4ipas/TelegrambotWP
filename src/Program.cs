@@ -261,6 +261,15 @@ class Program
                     );
                 }
             }
+            else
+            {
+                await botClient.SendMessage(
+                    chatId: chatId,
+                    text: "⚠️ You haven't selected a WordPress version yet. Use /SelectVersion to choose one.",
+                    cancellationToken: cancellationToken
+                );
+            }
+        }
         {
             await botClient.SendMessage(
                 chatId: chatId,
