@@ -56,3 +56,13 @@
             - /opt/telegram/version_users.json:/app/version_users.json
             - /opt/telegram/lastKnowVersions.json:/app/lastKnowVersions.json
   become: true
+
+- name: Stop and remove existing containers if needed
+  docker_container:
+    name: wordpresstelegrambot
+    state: absent
+  ignore_errors: true
+
+- name: Start services with Docker Compose
+  command: docker-compose -f /opt/telegram/docker-compose.yml up -d
+  become: true
