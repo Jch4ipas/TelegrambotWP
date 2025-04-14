@@ -32,3 +32,11 @@
     state: touch
     mode: '0755'
   become: true
+
+- name: Créer fichier lastKnowVersions.json
+  file:
+    path: /opt/telegram/lastKnowVersions.json
+    state: touch
+    mode: '0755'
+  become: true
+
