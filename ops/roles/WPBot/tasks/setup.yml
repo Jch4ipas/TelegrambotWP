@@ -40,3 +40,19 @@
     mode: '0755'
   become: true
 
+- name: Création fichier docker compose
+  copy:
+    dest: /opt/telegram/docker-compose.yml
+    content: |
+      version: '3.7'
+      services:
+        telegrambot:
+          image: "jchaipas/wordpresstelegrambot"
+          container_name: wordpresstelegrambot
+          restart: always
+          environment:
+            - envBotToken={{ bot_token }}
+          volumes:
+            - /opt/telegram/version_users.json:/app/version_users.json
+            - /opt/telegram/lastKnowVersions.json:/app/lastKnowVersions.json
+  become: true
