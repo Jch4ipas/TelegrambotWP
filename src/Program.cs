@@ -1,7 +1,8 @@
-using System;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using System.IO;
 using System.Text.Json;
 using Telegram.Bot;
@@ -42,13 +43,13 @@ class Program
         {
             string json = File.ReadAllText(filePathSubscribe);
             if (!string.IsNullOrWhiteSpace(json)){
-            var loadedData = JsonSerializer.Deserialize<HashSet<long>>(json);
-            if (loadedData != null)
-            {
-                SubscribedUsers.Clear();  // Supprime les anciennes valeurs (si besoin)
-                foreach (var user in loadedData)
+                var loadedData = JsonSerializer.Deserialize<HashSet<long>>(json);
+                if (loadedData != null)
                 {
-                    SubscribedUsers.Add(user);  // Ajoute les valeurs chargées
+                    SubscribedUsers.Clear();  // Supprime les anciennes valeurs (si besoin)
+                    foreach (var user in loadedData)
+                    {
+                        SubscribedUsers.Add(user);  // Ajoute les valeurs chargées
                     }
                 }
             }
@@ -100,6 +101,7 @@ class Program
         var botClient = new TelegramBotClient(BotToken);
 
         _ = Task.Run(() => CheckWordPressUpdates(botClient));
+        _ = Task.Run(() => CheckWordPressUpdatesSubscribe(botClient));
 
         using var cts = new CancellationTokenSource();
         var receiverOptions = new ReceiverOptions
@@ -139,13 +141,13 @@ class Program
                         if (!string.IsNullOrEmpty(latest))
                         {
                             if (!lastKnownVersions.TryGetValue(selectedVersion, out var lastStored) || lastStored != latest)
-                {
+                            {
                                 lastKnownVersions[selectedVersion] = latest;
                                 SaveData(filePathlastKnowVersions, lastKnownVersions);
-                        await botClient.SendMessage(
-                            chatId: userId,
+                                await botClient.SendMessage(
+                                    chatId: userId,
                                     text: $"New WordPress version detected for branch {version} : {latest}"
-                    );
+                                );
                             }
                         }
                     }
@@ -158,6 +160,42 @@ class Program
 
             // Wait 30 minute
             await Task.Delay(TimeSpan.FromMinutes(30));
+        }
+    }
+
+        private static async Task CheckWordPressUpdatesSubscribe(ITelegramBotClient botClient)
+        {
+           while (true)
+          {
+            try
+            {
+                var latestVersion = await GetLatestWordPressVersion();
+ 
+                if (!string.IsNullOrEmpty(latestVersion))
+                {
+                    var match = Regex.Match(latestVersion, @"^\d+\.\d+");
+                    string majorMinor = match.Success ? match.Value : latestVersion;
+                    if (!lastKnownVersions.TryGetValue(majorMinor, out var lastStored) || lastStored != latestVersion)
+                    {
+                        foreach (var userId in SubscribedUsers)
+                        {
+                            lastKnownVersions[majorMinor] = latestVersion;
+                            SaveData(filePathlastKnowVersions, lastKnownVersions);
+                            await botClient.SendMessage(
+                                chatId: userId,
+                                text: $"New WordPress version detected : {latestVersion}"
+                            );
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error while verifying WordPress : {ex.Message}");
+            }
+ 
+             // Wait 30 minute
+             await Task.Delay(TimeSpan.FromMinutes(30));
         }
     }
 
@@ -201,44 +239,45 @@ class Program
         }
         var latestVersion = await GetLatestWordPressVersion();
         var latestVersionSelected = await GetLatestWordPressVersion();
+        string botUsername = "WordPressUpdateBot"; 
         if (update.Message is not { Text: { } messageText })
             return;
 
         var chatId = update.Message.Chat.Id;
         Console.WriteLine($"Message received from {chatId} : {messageText}");
 
-        if (messageText.Equals("/Subscribe", StringComparison.OrdinalIgnoreCase))
+        if (Regex.IsMatch(messageText, $"/Subscribe(@{botUsername})?", RegexOptions.IgnoreCase))
+        {
+            if (SubscribedUsers.Add(chatId)) // Ajouter l'utilisateur s'il n'est pas déjà abonné
             {
-                if (SubscribedUsers.Add(chatId)) // Add the user if not already
-                {
-                    SaveData(filePathSubscribe, SubscribedUsers);
-                    await Choose_Version(botClient, chatId);
-                    Console.WriteLine("L'utilisateur " + chatId + "a été ajouter au fichier json");
-                    await botClient.SendMessage(
-                        chatId: chatId,
-                        text: "You are now subscribed to WordPress version updates!",
-                        cancellationToken: cancellationToken
-                    );
-                }
-                else
-                {
-                    await botClient.SendMessage(
-                        chatId: chatId,
-                        text: "You are already subscribed.",
-                        cancellationToken: cancellationToken
-                    );
-                }
+                SaveData(filePathSubscribe, SubscribedUsers);
+                Console.WriteLine("L'utilisateur " + chatId + " est maintenant abonné.");
+                await botClient.SendMessage(
+                    chatId: chatId,
+                    text: "You are now subscribed to WordPress version updates!",
+                    cancellationToken: cancellationToken
+                );
             }
+            else
+            {
+                await botClient.SendMessage(
+                    chatId: chatId,
+                    text: "You are already subscribed.",
+                    cancellationToken: cancellationToken
+                );
+            }
+        }
 
-        if (messageText.Equals("/lastversion", StringComparison.OrdinalIgnoreCase))
+        else if (Regex.IsMatch(messageText, $"/lastversion(@{botUsername})?", RegexOptions.IgnoreCase))
         {
             await botClient.SendMessage(
                 chatId: chatId,
-                text: $"The current version of WordPress : {latestVersion}",
+                text: $"The current version of WordPress: {latestVersion}",
                 cancellationToken: cancellationToken
             );
         }
-        if (messageText.Equals("/version", StringComparison.OrdinalIgnoreCase))
+
+        else if (Regex.IsMatch(messageText, $"/version(@{botUsername})?", RegexOptions.IgnoreCase))
         {
             if (userVersions.TryGetValue(chatId, out var selectedVersionStr) && 
                 double.TryParse(selectedVersionStr, out var selectedVersion))
@@ -263,14 +302,21 @@ class Program
             }
             else
             {
-                await botClient.SendMessage(
-                    chatId: chatId,
-                    text: "⚠️ You haven't selected a WordPress version yet. Use /SelectVersion to choose one.",
-                    cancellationToken: cancellationToken
-                );
+                var latestVersion1 = await GetLatestWordPressVersion();
+                if (!string.IsNullOrEmpty(latestVersion1))
+                {
+                    foreach (var userId in SubscribedUsers)
+                    {
+                        await botClient.SendMessage(
+                            chatId: userId,
+                            text: $"The latest version for WordPress: {latestVersion1}"
+                        );
+                    }
+                }
             }
         }
-        if (messageText.Equals("/myVersion", StringComparison.OrdinalIgnoreCase))
+
+        else if (Regex.IsMatch(messageText, $"/myVersion(@{botUsername})?", RegexOptions.IgnoreCase))
         {
             if (userVersions.TryGetValue(chatId, out var selectedVersion))
             {
@@ -281,38 +327,40 @@ class Program
                 );
             }
             else
-        {
-            await botClient.SendMessage(
-                chatId: chatId,
+            {
+                await botClient.SendMessage(
+                    chatId: chatId,
                     text: "You haven't selected a WordPress version yet. Use /SelectVersion to choose one.",
-                cancellationToken: cancellationToken
-            );
+                    cancellationToken: cancellationToken
+                );
             }
         }
-        if (messageText.Equals("/SelectVersion", StringComparison.OrdinalIgnoreCase))
+
+        else if (Regex.IsMatch(messageText, $"/SelectVersion(@{botUsername})?", RegexOptions.IgnoreCase))
         {
             await Choose_Version(botClient, chatId);
         }
-        if (messageText.Equals("/start", StringComparison.OrdinalIgnoreCase))
+
+        else if (Regex.IsMatch(messageText, $"/start(@{botUsername})?", RegexOptions.IgnoreCase))
         {
             string startMessage = 
                 "👋 *Welcome to the WordPress Update Bot!*\n\n" +
                 "This bot will notify you whenever a *new version of WordPress* is released for the branch you choose.\n\n" +
                 "📖 *Here’s how to get started:*\n\n" +
-                "1️⃣ *Subscribe* to receive notifications for WordPress updates. Use the command `/Subscribe` to subscribe.\n" +
-                "2️⃣ After subscribing, you'll be prompted to select a *WordPress version* (e.g., 6.7, 6.6, etc.).\n" +
-                "3️⃣ Once you've selected your version, you'll receive notifications whenever there's a new release for your selected branch.\n\n" +
+                "1️⃣ *Subscribe* to receive notifications for WordPress updates. Use the command `/Subscribe` to subscribe.\n\n" +
+                "2️⃣ Once you've subscribe, you'll receive notifications whenever there's a new release of WordPress.\n\n" +
                 "Type */help* to see all the commands.\n\n"+
                 "⚙️ *Notifications:* The bot checks every 30 minutes for new versions and sends you a message if there's an update.\n\n" +
                 "🙌 Thank you for using this bot! Let's keep your WordPress up to date!";
-                await botClient.SendMessage(
-                    chatId: chatId,
-                    text: startMessage,
-                    cancellationToken: cancellationToken,
-                    parseMode: ParseMode.Markdown
-                );
+            await botClient.SendMessage(
+                chatId: chatId,
+                text: startMessage,
+                cancellationToken: cancellationToken,
+                parseMode: ParseMode.Markdown
+            );
         }
-        if (messageText.Equals("/help", StringComparison.OrdinalIgnoreCase))
+
+        else if (Regex.IsMatch(messageText, $"/help(@{botUsername})?", RegexOptions.IgnoreCase))
         {
             string helpMessage = 
                 "👋 *Welcome to the WordPress Update Bot!*\n\n" +
@@ -320,8 +368,8 @@ class Program
                 "This bot allows you to receive notifications whenever a *new version of WordPress* is released for the branch you choose.\n\n" +
                 "📖 *Available Commands:*\n\n" +
                 "🔹 */lastversion* — Shows the latest stable version of WordPress.\n" +
-                "🔹 */version* — Shows the latest stable version of the branch that u select with */SelectVersion* of WordPress.\n" +
-                "🔹 */SelectVersion* — Allows you to choose a specific WordPress branch (e.g., 6.7, 6.6, etc.).\n" +
+                "🔹 */version* — Shows the latest stable version of WordPress (if u select a version, shows you the latest stable version for your branch) \n" +
+                "🔹 */SelectVersion* — Allows you to choose a specific WordPress branch u want to be notified when a new update is out (e.g., 6.7, 6.6, etc.).\n" +
                 "🔹 */myVersion* — Shows the version that u select\n" +
                 "🔹 */Subscribe* — Subscribes you to notifications for new WordPress versions.\n" +
                 "🔹 */menu* — Displays a menu with useful buttons.\n" +
@@ -335,10 +383,12 @@ class Program
                 cancellationToken: cancellationToken
             );
         }
-        if (messageText.Equals("/menu", StringComparison.OrdinalIgnoreCase))
+
+        else if (Regex.IsMatch(messageText, $"/menu(@{botUsername})?", RegexOptions.IgnoreCase))
         {
             await SendReplyKeyboard(botClient, chatId);
         }
+
         else if (update.Type == UpdateType.CallbackQuery && update.CallbackQuery != null)
         {
             await HandleCallbackQuery(botClient, update.CallbackQuery);
@@ -413,6 +463,7 @@ class Program
         );
     }
 
+    // Handles errors
     private static Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
     {
         string errorMessage = exception switch
