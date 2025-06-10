@@ -33,6 +33,13 @@
     mode: '0755'
   become: true
 
+- name: Créer fichier subscribed_users.json
+  file:
+    path: /opt/telegram/subscribed_users.json
+    state: touch
+    mode: '0755'
+  become: true
+
 - name: Créer fichier lastKnowVersions.json
   file:
     path: /opt/telegram/lastKnowVersions.json
@@ -55,6 +62,7 @@
           volumes:
             - /opt/telegram/version_users.json:/app/version_users.json
             - /opt/telegram/lastKnowVersions.json:/app/lastKnowVersions.json
+            - /opt/telegram/subscribed_users.json:/app/subscribed_users.json
   become: true
 
 - name: Stop and remove existing containers if needed
