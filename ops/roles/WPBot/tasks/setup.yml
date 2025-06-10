@@ -1,0 +1,68 @@
+- include_vars: vars.yml
+  tags:
+    - alway
+
+- name: Say hello
+  debug:
+    msg: "Hello there I'm working"
+  tags: sayHello
+
+- name: Install Docker
+  apt:
+    name:
+      - docker.io
+    state: present
+
+- name: Start Docker service
+  systemd:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Créer dossier pour les fichiers JSON
+  file:
+    path: /opt/telegram
+    state: directory
+    mode: '0755'
+  become: true
+
+- name: Créer fichier version_users.json
+  file:
+    path: /opt/telegram/version_users.json
+    state: touch
+    mode: '0755'
+  become: true
+
+- name: Créer fichier lastKnowVersions.json
+  file:
+    path: /opt/telegram/lastKnowVersions.json
+    state: touch
+    mode: '0755'
+  become: true
+
+- name: Création fichier docker compose
+  copy:
+    dest: /opt/telegram/docker-compose.yml
+    content: |
+      version: '3.7'
+      services:
+        telegrambot:
+          image: "jchaipas/wordpresstelegrambot"
+          container_name: wordpresstelegrambot
+          restart: always
+          environment:
+            - envBotToken={{ bot_token }}
+          volumes:
+            - /opt/telegram/version_users.json:/app/version_users.json
+            - /opt/telegram/lastKnowVersions.json:/app/lastKnowVersions.json
+  become: true
+
+- name: Stop and remove existing containers if needed
+  docker_container:
+    name: wordpresstelegrambot
+    state: absent
+  ignore_errors: true
+
+- name: Start services with Docker Compose
+  command: docker-compose -f /opt/telegram/docker-compose.yml up -d
+  become: true
