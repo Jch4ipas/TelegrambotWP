@@ -71,6 +71,10 @@
     state: absent
   ignore_errors: true
 
+- name: Update dashboard image
+  command: sudo docker pull jchaipas/wordpresstelegrambot:latest
+  become: true
+
 - name: Start services with Docker Compose
   command: docker-compose -f /opt/telegram/docker-compose.yml up -d
   become: true
