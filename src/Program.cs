@@ -181,9 +181,13 @@ class Program
                         {
                             lastKnownVersions[majorMinor] = latestVersion;
                             SaveData(filePathlastKnowVersions, lastKnownVersions);
+                            string newVersionMessage = 
+                                $"New WordPress version detected : {latestVersion}\n" +
+                                "https://wordpress.org/news/category/releases/\n";
                             await botClient.SendMessage(
                                 chatId: userId,
-                                text: $"New WordPress version detected : {latestVersion}"
+                                text: newVersionMessage,
+                                parseMode: ParseMode.Markdown
                             );
                         }
                     }
@@ -251,7 +255,7 @@ class Program
             if (SubscribedUsers.Add(chatId)) // Ajouter l'utilisateur s'il n'est pas déjà abonné
             {
                 SaveData(filePathSubscribe, SubscribedUsers);
-                Console.WriteLine("L'utilisateur " + chatId + " est maintenant abonné.");
+                Console.WriteLine("The user " + chatId + " is now subscribed");
                 await botClient.SendMessage(
                     chatId: chatId,
                     text: "You are now subscribed to WordPress version updates!",
@@ -292,7 +296,7 @@ class Program
 
         else if (Regex.IsMatch(messageText, $"/version(@{botUsername})?", RegexOptions.IgnoreCase))
         {
-            if (userVersions.TryGetValue(chatId, out var selectedVersionStr) && 
+            if (userVersions.TryGetValue(chatId, out var selectedVersionStr) &&
                 double.TryParse(selectedVersionStr, out var selectedVersion))
             {
                 var latestSelected = await GetLatestWordPressSelectedVersion(selectedVersion);
