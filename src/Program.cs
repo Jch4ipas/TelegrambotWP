@@ -267,7 +267,20 @@ class Program
                 );
             }
         }
+        else if (Regex.IsMatch(messageText, $"/Unsubscribe(@{botUsername})?", RegexOptions.IgnoreCase))
+        {
+            if (SubscribedUsers.Remove(chatId))
+            {
+                SaveData(filePathSubscribe, SubscribedUsers);
+                Console.WriteLine("The user " + chatId + " is no longer subscribed");
+                await botClient.SendMessage(
+                    chatId: chatId,
+                    text: "You are unsubscribed to WordPress version updates",
+                    cancellationToken: cancellationToken
+                );
+            }
 
+        }
         else if (Regex.IsMatch(messageText, $"/lastversion(@{botUsername})?", RegexOptions.IgnoreCase))
         {
             await botClient.SendMessage(
@@ -305,13 +318,10 @@ class Program
                 var latestVersion1 = await GetLatestWordPressVersion();
                 if (!string.IsNullOrEmpty(latestVersion1))
                 {
-                    foreach (var userId in SubscribedUsers)
-                    {
-                        await botClient.SendMessage(
-                            chatId: userId,
-                            text: $"The latest version for WordPress: {latestVersion1}"
-                        );
-                    }
+                    await botClient.SendMessage(
+                        chatId: chatId,
+                        text: $"The latest version for WordPress: {latestVersion1}"
+                    );
                 }
             }
         }
@@ -343,13 +353,13 @@ class Program
 
         else if (Regex.IsMatch(messageText, $"/start(@{botUsername})?", RegexOptions.IgnoreCase))
         {
-            string startMessage = 
+            string startMessage =
                 "👋 *Welcome to the WordPress Update Bot!*\n\n" +
                 "This bot will notify you whenever a *new version of WordPress* is released for the branch you choose.\n\n" +
                 "📖 *Here’s how to get started:*\n\n" +
                 "1️⃣ *Subscribe* to receive notifications for WordPress updates. Use the command `/Subscribe` to subscribe.\n\n" +
                 "2️⃣ Once you've subscribe, you'll receive notifications whenever there's a new release of WordPress.\n\n" +
-                "Type */help* to see all the commands.\n\n"+
+                "Type */help* to see all the commands.\n\n" +
                 "⚙️ *Notifications:* The bot checks every 30 minutes for new versions and sends you a message if there's an update.\n\n" +
                 "🙌 Thank you for using this bot! Let's keep your WordPress up to date!";
             await botClient.SendMessage(
@@ -362,17 +372,18 @@ class Program
 
         else if (Regex.IsMatch(messageText, $"/help(@{botUsername})?", RegexOptions.IgnoreCase))
         {
-            string helpMessage = 
+            string helpMessage =
                 "👋 *Welcome to the WordPress Update Bot!*\n\n" +
                 "📌 *What does this bot do?*\n" +
                 "This bot allows you to receive notifications whenever a *new version of WordPress* is released for the branch you choose.\n\n" +
                 "📖 *Available Commands:*\n\n" +
                 "🔹 */lastversion* — Shows the latest stable version of WordPress.\n" +
                 "🔹 */version* — Shows the latest stable version of WordPress (if u select a version, shows you the latest stable version for your branch) \n" +
+                "🔹 */Subscribe* — Subscribes you to notifications for new WordPress versions.\n" +
+                "🔹 */Unsubscribe* — Unsubscribes you to notifications for new WordPress versions.\n" +
+                "🔹 */menu* — Displays a menu with useful buttons.(not recommended to use)\n" +
                 "🔹 */SelectVersion* — Allows you to choose a specific WordPress branch u want to be notified when a new update is out (e.g., 6.7, 6.6, etc.).\n" +
                 "🔹 */myVersion* — Shows the version that u select\n" +
-                "🔹 */Subscribe* — Subscribes you to notifications for new WordPress versions.\n" +
-                "🔹 */menu* — Displays a menu with useful buttons.\n" +
                 "🔹 */help* — Displays this list of commands and the bot's functionality.\n\n" +
                 "⚙️ The bot checks every 30 minutes for new versions and sends you a message if there's an update.\n\n" +
                 "🙌 Thank you for using this bot!";
